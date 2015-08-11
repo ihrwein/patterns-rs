@@ -44,11 +44,6 @@ impl EventDemultiplexer for Demultiplexer {
     }
 }
 
-enum Event {
-    A(i32),
-    B(f32)
-}
-
 struct A {
     i: i32,
     f: f32
