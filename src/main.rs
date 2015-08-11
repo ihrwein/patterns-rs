@@ -18,10 +18,11 @@ trait Reactor<I, O> {
     fn remove_handler(&mut self, handler: Box<EventHandler<I, Handler=O>>);
 }
 
-struct ConcreteReactor<I, O> {
-    map: BTreeMap<O, Box<EventHandler<I, Handler=O>>>
+struct ConcreteReactor<I, O, T> where T: EventHandler<I, Handler=O> {
+    selector: Box<EventDemultiplexer<Event=I>>,
+    map: BTreeMap<O, Box<T>>,
 }
-
+/*
 impl<I, O: Ord> Reactor<I, O> for ConcreteReactor<I, O> {
     fn handle_events(&mut self) {
     }
@@ -31,7 +32,7 @@ impl<I, O: Ord> Reactor<I, O> for ConcreteReactor<I, O> {
     fn remove_handler(&mut self, handler: Box<EventHandler<I, Handler=O>>) {
         self.map.remove(&handler.handler());
     }
-}
+}*/
 
 struct Demultiplexer(i32);
 
