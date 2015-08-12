@@ -13,11 +13,23 @@ trait EventDemultiplexer {
 }
 
 trait Reactor {
-    type Event;
+    type Event: Event;
     type Handler;
     fn handle_events(&mut self);
     fn register_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
     fn remove_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
+}
+
+trait Event {
+    type Handler;
+    fn handler(&self) -> Self::Handler;
+}
+
+impl Event for i32 {
+    type Handler = i32;
+    fn handler(&self) -> Self::Handler {
+        *self
+    }
 }
 
 struct ConcreteReactor {
@@ -31,7 +43,7 @@ impl Reactor for ConcreteReactor {
     fn handle_events(&mut self) {
         let event = self.selector.select();
 
-        if let Some(handler) = self.map.get_mut(&event) {
+        if let Some(handler) = self.map.get_mut(&event.handler()) {
             println!("Event handled");
             handler.handle_event(event);
         }
