@@ -17,7 +17,7 @@ trait Reactor {
     type Handler;
     fn handle_events(&mut self);
     fn register_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
-    fn remove_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
+    fn remove_handler(&mut self, handler: &EventHandler<Self::Event, Handler=Self::Handler>);
 }
 
 trait Event {
@@ -62,7 +62,7 @@ impl Reactor for ConcreteReactor {
     fn register_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>) {
         self.map.insert(handler.handler(), handler);
     }
-    fn remove_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>) {
+    fn remove_handler(&mut self, handler: &EventHandler<Self::Event, Handler=Self::Handler>) {
         self.map.remove(&handler.handler());
     }
 }
