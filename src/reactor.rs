@@ -6,7 +6,7 @@ trait EventHandler<T> {
 
 trait EventDemultiplexer {
     type Event;
-    fn select(&mut self) -> Self::Event;
+    fn select(&mut self) -> Option<Self::Event>;
 }
 
 trait Reactor {
@@ -38,13 +38,15 @@ mod test {
     struct ConcreteReactor {
         selector: Box<EventDemultiplexer<Event=i32>>,
         map: BTreeMap<i32, Box<EventHandler<i32, Handler=i32>>>,
+        event_count: i32
     }
 
     impl ConcreteReactor {
         fn new(selector: Box<EventDemultiplexer<Event=i32>>) -> ConcreteReactor {
             ConcreteReactor {
                 selector: selector,
-                map: BTreeMap::new()
+                map: BTreeMap::new(),
+                event_count: 0
             }
         }
     }
@@ -54,10 +56,13 @@ mod test {
         type Handler = i32;
         fn handle_events(&mut self) {
             loop {
-                let event = self.selector.select();
-
-                if let Some(handler) = self.map.get_mut(&event.handler()) {
-                    handler.handle_event(event);
+                if let Some(event) = self.selector.select() {
+                    self.event_count += 1;
+                    if let Some(handler) = self.map.get_mut(&event.handler()) {
+                        handler.handle_event(event);
+                    }
+                } else {
+                    break;
                 }
             }
         }
@@ -71,11 +76,16 @@ mod test {
 
     struct Demultiplexer(i32);
 
+    const MAX_EVENTS: i32 = 5;
     impl EventDemultiplexer for Demultiplexer {
         type Event = i32;
-        fn select(&mut self) -> Self::Event {
+        fn select(&mut self) -> Option<Self::Event> {
             self.0 += 1;
-            self.0 % 5
+            if self.0 < MAX_EVENTS {
+                Some(self.0)
+            } else {
+                None
+            }
         }
     }
 
@@ -105,5 +115,7 @@ mod test {
         let mut reactor = ConcreteReactor::new(Box::new(dem));
         register_handlers(&mut reactor);
         reactor.handle_events();
+        assert_eq!(reactor.selector.select(), None);
+        assert_eq!(reactor.event_count, MAX_EVENTS - 1);
     }
 }
