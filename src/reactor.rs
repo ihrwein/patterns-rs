@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 trait EventHandler<T> {
     type Handler;
     fn handle_event(&mut self, event: T);
@@ -12,9 +14,10 @@ trait EventDemultiplexer {
 trait Reactor {
     type Event: Event;
     type Handler;
+    type Eventhandler: Deref<Target=EventHandler<Self::Event, Handler=Self::Handler>>;
     fn handle_events(&mut self);
-    fn register_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
-    fn remove_handler(&mut self, handler: &EventHandler<Self::Event, Handler=Self::Handler>);
+    fn register_handler(&mut self, handler: Self::Eventhandler);
+    fn remove_handler(&mut self, handler: &Self::Eventhandler);
 }
 
 trait Event {
@@ -101,12 +104,30 @@ mod test {
         }
     }
 
+    struct Composite<T> {
+        handler: T,
+        values: Vec<T>
+    }
+
+    impl EventHandler<i32> for Composite<i32> {
+        type Handler = i32;
+        fn handle_event(&mut self, event: i32) {
+            for i in self.values.iter_mut() {
+                *i += event;
+            }
+            println!("added {} to every values", event);
+        }
+        fn handler(&self) -> Self::Handler {
+            self.handler
+        }
+    }
+
     fn register_handlers(reactor: &mut Reactor<Event=i32, Handler=i32>) {
         reactor.register_handler(Box::new(A(0)));
         reactor.register_handler(Box::new(A(1)));
         reactor.register_handler(Box::new(A(2)));
         reactor.register_handler(Box::new(A(3)));
-        reactor.register_handler(Box::new(A(4)));
+        reactor.register_handler(Box::new(Composite{handler: 4, values: vec![0,0,0,0]}));
     }
 
     #[test]
