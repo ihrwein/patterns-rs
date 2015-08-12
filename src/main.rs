@@ -54,7 +54,6 @@ impl Reactor for ConcreteReactor {
             let event = self.selector.select();
 
             if let Some(handler) = self.map.get_mut(&event.handler()) {
-                println!("Event handled");
                 handler.handle_event(event);
             }
         }
