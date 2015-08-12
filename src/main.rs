@@ -12,24 +12,34 @@ trait EventDemultiplexer {
     fn select(&mut self) -> Self::Event;
 }
 
-trait Reactor<I, O> {
+trait Reactor {
+    type Event;
+    type Handler;
     fn handle_events(&mut self);
-    fn register_handler(&mut self, handler: Box<EventHandler<I, Handler=O>>);
-    fn remove_handler(&mut self, handler: Box<EventHandler<I, Handler=O>>);
+    fn register_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
+    fn remove_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>);
 }
 
-struct ConcreteReactor<I, O> {
-    selector: Box<EventDemultiplexer<Event=I>>,
-    map: BTreeMap<O, Box<EventHandler<I, Handler=O>>>,
+struct ConcreteReactor {
+    selector: Box<EventDemultiplexer<Event=i32>>,
+    map: BTreeMap<i32, Box<EventHandler<i32, Handler=i32>>>,
 }
 
-impl<I, O: Ord> Reactor<I, O> for ConcreteReactor<I, O> {
+impl Reactor for ConcreteReactor {
+    type Event = i32;
+    type Handler = i32;
     fn handle_events(&mut self) {
+        let event = self.selector.select();
+
+        if let Some(handler) = self.map.get_mut(&event) {
+            println!("Event handled");
+            handler.handle_event(event);
+        }
     }
-    fn register_handler(&mut self, handler: Box<EventHandler<I, Handler=O>>) {
+    fn register_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>) {
         self.map.insert(handler.handler(), handler);
     }
-    fn remove_handler(&mut self, handler: Box<EventHandler<I, Handler=O>>) {
+    fn remove_handler(&mut self, handler: Box<EventHandler<Self::Event, Handler=Self::Handler>>) {
         self.map.remove(&handler.handler());
     }
 }
